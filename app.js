@@ -1,35 +1,26 @@
-const axios = require('axios');
-const express = require('express');
-const app = express();
-const port = 3000;
-
-app.get('/', (req, res) => {
-  const n = req.query.nam;
-  const url = 'https://ibiza.ooredoo.dz/api/v1/mobile-bff/users/mgm/info/apply';
-  const payload = { mgmValue: "5Q7K83N744" }
-  const headers = {
-    'Authorization': `Bearer `,
-    'language': 'EN',
-    'request-id': '14a32040-b8e8-4831-a255-8a7dce786dca',
-    'flavour-type': 'gms',
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': '50',
-    'Host': 'ibiza.ooredoo.dz',
-    'Connection': 'Keep-Alive',
-    'Accept-Encoding': 'gzip',
-    'User-Agent': 'okhttp/4.9.3'
-};
-
-async function postData() {
-    try {
-        const response = await axios.post(url, payload, { headers });
-        console.log(response.data);
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-postData();
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+const express = require("express");
+const bodyParser = require("body-parser");
+const Botly = require("botly");
+const botly = new Botly({
+    accessToken: 'EAAR5Iep3r7IBO1jFZBtQotTQCZAkkM3kif1lEKXgua3mrSFyI9lTxcFUoyaofnX7ZBoQn4ndOjjFihrkfd5gIegsSZA0vneSgLkaKzZAF322uSILoiWEQQ4WmWeCrraQPmth5lnSUZBP4FJQrU4sjbrSB4GNgSgJQ7T9WBWGGJbfloadt4JBGoikWToOTCvFbX', // page access token provided by facebook
+    verifyToken:'text', // needed when using express - the verification token you provided when defining the webhook in facebook
+    notificationType: Botly.CONST.REGULAR, // already the default (optional)
+    FB_URL: 'https://graph.facebook.com/v2.6/' // this is the default - allows overriding for testing purposes
 });
+
+botly.on("message", (senderId, message, data) => {
+    let text = `echo: ${data.text}`;
+
+    botly.sendText({
+      id: senderId,
+      text: text
+    });
+});
+
+const app = express();
+app.use(bodyParser.json({
+    verify: botly.getVerifySignature(process.env.APP_SECRET) //allow signature verification based on the app secret
+}));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use("/webhook", botly.router());
+app.listen(3000);
